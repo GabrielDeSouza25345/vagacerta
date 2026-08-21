@@ -1,0 +1,9 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": { "dockerfilePath": "Dockerfile.browser-worker" },
+  "deploy": {
+    "healthcheckPath": "/health/browser-worker",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE"
+  }
+}

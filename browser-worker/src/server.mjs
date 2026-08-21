@@ -4,13 +4,15 @@ import { chromium } from "playwright";
 import { ACTIONS, authorize, LockManager, platformUrl, PLATFORMS, profileKey, StateStore } from "./core.mjs";
 
 const config = {
-  port: Number(process.env.PORT ?? 8080), dataRoot: process.env.BROWSER_DATA_ROOT ?? "/data",
+  port: Number(process.env.PORT ?? 8080), dataRoot: process.env.DATA_DIR ?? process.env.BROWSER_DATA_ROOT ?? "/data",
   token: process.env.BROWSER_WORKER_TOKEN, encryptionKey: process.env.BROWSER_PROFILE_ENCRYPTION_KEY,
   timeout: Number(process.env.BROWSER_JOB_TIMEOUT ?? 300000), maxWorkers: Number(process.env.MAX_BROWSER_WORKERS ?? 1),
   interactiveBaseUrl: process.env.INTERACTIVE_BROWSER_BASE_URL ?? null,
+  maxJobsPerUser: Number(process.env.MAX_BROWSER_JOBS_PER_USER ?? 2), betaMode: process.env.BETA_MODE === "true", betaMaxUsers: Number(process.env.BETA_MAX_USERS ?? 6),
 };
 if (!config.token || !config.encryptionKey) throw new Error("BROWSER_WORKER_TOKEN and BROWSER_PROFILE_ENCRYPTION_KEY are required");
 const store = new StateStore(config.dataRoot, config.encryptionKey); await store.load(); const locks = new LockManager(); let activeJobs = 0;
+const startedAt = Date.now();
 
 async function validate(page, platform) {
   const url = page.url();
@@ -46,10 +48,10 @@ setInterval(async () => { if (activeJobs >= config.maxWorkers) return; const job
 function json(response, status, body) { response.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" }); response.end(JSON.stringify(body)); }
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host}`);
-  if (url.pathname === "/health/browser-worker") return json(response, 200, { status: "ok", workersAvailable: Math.max(0, config.maxWorkers - activeJobs), activeJobs, queueLength: store.state.jobs.filter(j => j.status === "QUEUED").length });
+  if (url.pathname === "/health/browser-worker") { const profiles=Object.values(store.state.profiles); return json(response, 200, { status: "ok", worker: "online", workersAvailable: Math.max(0, config.maxWorkers - activeJobs), activeBrowserSessions: activeJobs, activeJobs, queuedJobs: store.state.jobs.filter(j => j.status === "QUEUED").length, connectedProfiles: profiles.filter(p => p.status === "CONNECTED").length, expiredProfiles: profiles.filter(p => p.status === "EXPIRED").length, workerUptime: Math.floor((Date.now()-startedAt)/1000) }); }
   if (!authorize(request, config.token)) return json(response, 401, { error: "unauthorized" });
   const userId = request.headers["x-authenticated-user-id"]; if (!userId || Array.isArray(userId)) return json(response, 401, { error: "missing_identity" });
-  if (request.method === "POST" && url.pathname === "/browser/jobs") { let raw=""; for await (const chunk of request) raw += chunk; const body=JSON.parse(raw||"{}"); if(!PLATFORMS.has(body.platform)||!ACTIONS.has(body.action)) return json(response,400,{error:"invalid_job"}); const job=await store.addJob({userId,platform:body.platform,action:body.action}); return json(response,202,{job}); }
+  if (request.method === "POST" && url.pathname === "/browser/jobs") { let raw=""; for await (const chunk of request) raw += chunk; const body=JSON.parse(raw||"{}"); if(!PLATFORMS.has(body.platform)||!ACTIONS.has(body.action)) return json(response,400,{error:"invalid_job"}); const userHash=profileKey(userId,"LINKEDIN").split("/")[0]; const userJobs=store.state.jobs.filter(j=>j.userIdHash===userHash&&["QUEUED","RUNNING","ACTION_REQUIRED"].includes(j.status)).length; if(userJobs>=config.maxJobsPerUser)return json(response,429,{error:"user_job_limit"}); const knownUsers=new Set(store.state.jobs.map(j=>j.userIdHash)); if(config.betaMode&&!knownUsers.has(userHash)&&knownUsers.size>=config.betaMaxUsers)return json(response,403,{error:"beta_user_limit"}); const job=await store.addJob({userId,platform:body.platform,action:body.action}); return json(response,202,{job}); }
   const match=url.pathname.match(/^\/browser\/jobs\/([^/]+)$/); if(request.method==="GET"&&match){const job=store.job(match[1],userId);return job?json(response,200,{job}):json(response,404,{error:"not_found"});}
   if(request.method==="GET"&&url.pathname==="/integrations"){return json(response,200,{integrations:["LINKEDIN","GUPY"].map(platform=>store.profile(userId,platform)??{platform,status:"DISCONNECTED"})});}
   return json(response,404,{error:"not_found"});
