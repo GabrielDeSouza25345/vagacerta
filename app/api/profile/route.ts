@@ -1,11 +1,12 @@
 import { eq } from "drizzle-orm";
-import { getDb } from "../../../db";
+import { ensurePreviewDatabase, getDb } from "../../../db";
 import { profiles, users } from "../../../db/schema";
 import { getChatGPTUser } from "../../chatgpt-auth";
 
 const allowedFields = ["city", "state", "profession", "objective", "desiredRoles", "experienceSummary", "educationSummary", "skills", "availability", "preferences"] as const;
 
 async function identity() {
+  await ensurePreviewDatabase();
   const user = await getChatGPTUser();
   if (!user) return null;
   const db = getDb();

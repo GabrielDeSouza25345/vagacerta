@@ -22,7 +22,10 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!userId || !email) return null;
+  if (!userId || !email) {
+    if (import.meta.env.DEV) return { userId: "local-preview-user", displayName: "Gabriel (teste)", email: "preview@localhost", fullName: "Gabriel (teste)" };
+    return null;
+  }
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =

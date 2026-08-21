@@ -1,9 +1,10 @@
 import { desc, eq } from "drizzle-orm";
-import { getDb } from "../../../db";
+import { ensurePreviewDatabase, getDb } from "../../../db";
 import { applications, users } from "../../../db/schema";
 import { getChatGPTUser } from "../../chatgpt-auth";
 
 export async function GET() {
+  await ensurePreviewDatabase();
   const user = await getChatGPTUser();
   if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
   const rows = await getDb().select().from(applications).where(eq(applications.userId, user.userId)).orderBy(desc(applications.createdAt)).limit(100);
@@ -11,6 +12,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  await ensurePreviewDatabase();
   const user = await getChatGPTUser(); if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const company = typeof body?.company === "string" ? body.company.trim().slice(0, 160) : ""; const role = typeof body?.role === "string" ? body.role.trim().slice(0, 160) : "";

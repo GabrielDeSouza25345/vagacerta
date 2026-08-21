@@ -1,9 +1,10 @@
 import { and, eq } from "drizzle-orm";
-import { getDb } from "../../../db";
+import { ensurePreviewDatabase, getDb } from "../../../db";
 import { integrations, users } from "../../../db/schema";
 import { getChatGPTUser } from "../../chatgpt-auth";
 
 async function context() {
+  await ensurePreviewDatabase();
   const user = await getChatGPTUser(); if (!user) return null;
   const db = getDb(); const now = new Date();
   await db.insert(users).values({ id: user.userId, email: user.email, name: user.displayName, createdAt: now, updatedAt: now }).onConflictDoUpdate({ target: users.id, set: { email: user.email, name: user.displayName, updatedAt: now } });
