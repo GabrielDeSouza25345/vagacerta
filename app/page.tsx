@@ -41,7 +41,7 @@ export default async function Home() {
       <section className="content" id="inicio">
         <header className="topbar">
           <div><p>SEU AMBIENTE DE CANDIDATURAS</p><h1>Olá, {displayName} <span>👋</span></h1></div>
-          <a className="secondary" href={authenticatedUser ? "/api/me" : chatGPTSignInPath("/")}>{authenticatedUser ? "Minha conta" : "Entrar"}</a>
+          <a className="secondary" href={authenticatedUser ? "#configuracoes" : chatGPTSignInPath("/")}>{authenticatedUser ? "Minha conta" : "Entrar"}</a>
         </header>
 
         <section className="hero-card">
@@ -49,7 +49,7 @@ export default async function Home() {
           <div className="progress-ring"><strong>67%</strong><span>concluído</span></div>
           <div className="steps">
             {steps.map((step, index) => <article key={step.label} className={step.done ? "step done" : "step"}>
-              <span className="step-number">{step.done ? "✓" : index + 1}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div>{!step.done && <button>Configurar</button>}
+              <span className="step-number">{step.done ? "✓" : index + 1}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div>{!step.done && <a className="step-action" href="#integracoes">Configurar</a>}
             </article>)}
           </div>
         </section>
@@ -65,14 +65,14 @@ export default async function Home() {
           <article className="panel actions-panel">
             <div className="panel-title"><div><span className="eyebrow">PRÓXIMO PASSO</span><h3>O que você quer fazer?</h3></div></div>
             <div className="action-list">
-              <button className="action primary-action"><Mark>⌕</Mark><div><strong>Buscar vagas compatíveis</strong><small>LinkedIn e Gupy, com seus filtros</small></div><span>→</span></button>
-              <button className="action"><Mark>▤</Mark><div><strong>Revisar currículo principal</strong><small>O mesmo arquivo aprovado em todas as vagas</small></div><span>→</span></button>
-              <button className="action"><Mark>⌁</Mark><div><strong>Conectar plataformas</strong><small>Login assistido e sessões individuais</small></div><span>→</span></button>
+              <a className="action primary-action" href="#vagas"><Mark>⌕</Mark><div><strong>Buscar vagas compatíveis</strong><small>LinkedIn e Gupy, com seus filtros</small></div><span>→</span></a>
+              <a className="action" href="#curriculo"><Mark>▤</Mark><div><strong>Revisar currículo principal</strong><small>O mesmo arquivo aprovado em todas as vagas</small></div><span>→</span></a>
+              <a className="action" href="#integracoes"><Mark>⌁</Mark><div><strong>Conectar plataformas</strong><small>Login assistido e sessões individuais</small></div><span>→</span></a>
             </div>
           </article>
 
-          <article className="panel recent-panel" id="candidaturas">
-            <div className="panel-title"><div><span className="eyebrow">ATIVIDADE RECENTE</span><h3>Últimas candidaturas</h3></div><a href="#todas">Ver todas</a></div>
+          <article className="panel recent-panel" id="atividade-recente">
+            <div className="panel-title"><div><span className="eyebrow">ATIVIDADE RECENTE</span><h3>Últimas candidaturas</h3></div><a href="#historico">Ver todas</a></div>
             <div className="application-list">
               {applications.map((item) => <div className="application" key={item.company + item.role}>
                 <div className="company-logo">{item.company.slice(0, 1)}</div><div><strong>{item.role}</strong><small>{item.company}</small></div><span className={`status ${item.tone}`}>{item.status}</span>
