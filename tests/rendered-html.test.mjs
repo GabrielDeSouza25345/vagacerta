@@ -31,12 +31,19 @@ test("profile and application APIs derive identity from the authenticated sessio
   assert.doesNotMatch(applications, /searchParams.*user/i);
 });
 
-test("integration confirmation is persisted and user-scoped", async () => {
+test("integration login is visual, temporary and user-scoped", async () => {
   const route = await readFile(new URL("../app/api/integrations/route.ts", import.meta.url), "utf8");
   const client = await readFile(new URL("../app/dashboard-client.tsx", import.meta.url), "utf8");
+  const worker = await readFile(new URL("../browser-worker/src/server.mjs", import.meta.url), "utf8");
   assert.match(route, /getChatGPTUser/);
   assert.match(route, /"x-authenticated-user-id": userId/);
   assert.doesNotMatch(route, /body\.user_id|body\.userId/);
-  assert.match(client, /Conectar \/ validar/);
+  assert.match(client, /Conectar LinkedIn/);
+  assert.match(client, /Abrir login do/);
   assert.match(client, /\/api\/integrations/);
+  assert.match(worker, /randomBytes\(32\)/);
+  assert.match(worker, /session\.userId/);
+  assert.match(worker, /x-content-type-options/);
+  assert.doesNotMatch(client, /BROWSER_WORKER_TOKEN/);
 });
+
