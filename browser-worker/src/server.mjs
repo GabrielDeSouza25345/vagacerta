@@ -1,6 +1,7 @@
 import http from "node:http";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { rm } from "node:fs/promises";
 import { chromium } from "playwright";
 import { ACTIONS, authorize, LockManager, platformUrl, PLATFORMS, profileKey, StateStore } from "./core.mjs";
 
@@ -30,6 +31,7 @@ async function execute(job) {
     try {
       if (job.action === "DISCONNECT_PLATFORM") { await store.deleteProfile(job.userId, job.platform); return store.patchJob(job.id, { status: "SUCCEEDED", finishedAt: new Date().toISOString(), result: { status: "DISCONNECTED" } }); }
       await store.updateProfile(job.userId, job.platform, { status: job.action === "CONNECT_PLATFORM" ? "CONNECTING" : "NEEDS_VALIDATION", storagePath: profileKey(job.userId, job.platform) });
+      for (const staleLock of ["SingletonLock", "SingletonSocket", "SingletonCookie"]) await rm(path.join(profileDir, staleLock), { force: true, recursive: true }).catch(() => {});
       context = await chromium.launchPersistentContext(profileDir, { headless: job.action !== "CONNECT_PLATFORM", viewport: { width: 1280, height: 800 } });
       const page = context.pages()[0] ?? await context.newPage(); await page.goto(platformUrl(job.platform), { waitUntil: "domcontentloaded", timeout: 60000 });
       let validation = await validate(page, job.platform);
