@@ -30,3 +30,13 @@ test("profile and application APIs derive identity from the authenticated sessio
   assert.doesNotMatch(profile, /body\.user_id|body\.userId/);
   assert.doesNotMatch(applications, /searchParams.*user/i);
 });
+
+test("integration confirmation is persisted and user-scoped", async () => {
+  const route = await readFile(new URL("../app/api/integrations/route.ts", import.meta.url), "utf8");
+  const client = await readFile(new URL("../app/dashboard-client.tsx", import.meta.url), "utf8");
+  assert.match(route, /getChatGPTUser/);
+  assert.match(route, /eq\(integrations\.userId, ctx\.user\.userId\)/);
+  assert.doesNotMatch(route, /body\.user_id|body\.userId/);
+  assert.match(client, /2\. Já entrei/);
+  assert.match(client, /\/api\/integrations/);
+});
