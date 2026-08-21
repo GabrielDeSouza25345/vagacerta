@@ -1,5 +1,6 @@
 import http from "node:http";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { chromium } from "playwright";
 import { ACTIONS, authorize, LockManager, platformUrl, PLATFORMS, profileKey, StateStore } from "./core.mjs";
 
@@ -33,7 +34,7 @@ async function execute(job) {
       const page = context.pages()[0] ?? await context.newPage(); await page.goto(platformUrl(job.platform), { waitUntil: "domcontentloaded", timeout: 60000 });
       let validation = await validate(page, job.platform);
       if (job.action === "CONNECT_PLATFORM" && !validation.authenticated) {
-        const actionToken = crypto.randomUUID(); const interactiveUrl = config.interactiveBaseUrl ? `${config.interactiveBaseUrl.replace(/\/$/, "")}/?token=${actionToken}` : null;
+        const actionToken = randomUUID(); const interactiveUrl = config.interactiveBaseUrl ? `${config.interactiveBaseUrl.replace(/\/$/, "")}/?token=${actionToken}` : null;
         await store.updateProfile(job.userId, job.platform, { status: "CONNECTING", lastUsedAt: new Date().toISOString() });
         return store.patchJob(job.id, { status: "ACTION_REQUIRED", finishedAt: new Date().toISOString(), result: { status: "CONNECTING", interactiveUrl, reason: "LOGIN_OR_MFA_REQUIRED" } });
       }
@@ -56,3 +57,4 @@ const server = http.createServer(async (request, response) => {
   if(request.method==="GET"&&url.pathname==="/integrations"){return json(response,200,{integrations:["LINKEDIN","GUPY"].map(platform=>store.profile(userId,platform)??{platform,status:"DISCONNECTED"})});}
   return json(response,404,{error:"not_found"});
 }); server.listen(config.port, () => console.log(JSON.stringify({ event: "browser_worker_started", port: config.port })));
+
