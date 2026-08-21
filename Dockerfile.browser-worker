@@ -6,4 +6,5 @@ COPY browser-worker/src ./src
 ENV PORT=8080 BROWSER_DATA_ROOT=/data MAX_BROWSER_WORKERS=1 BROWSER_JOB_TIMEOUT=300000
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -fsS http://localhost:8080/health/browser-worker || exit 1
-CMD ["npm", "start"]
+CMD ["xvfb-run", "-a", "npm", "start"]
+
