@@ -9,6 +9,7 @@ const applications = [
   { company: "Swissport", role: "Auxiliar de Mecânico de Equipamentos", status: "Enviada", tone: "green" },
   { company: "Piracanjuba", role: "Operador de Máquinas I", status: "Em análise", tone: "blue" },
 ];
+import DashboardClient from "./dashboard-client";
 
 function Mark({ children }: { children: React.ReactNode }) {
   return <span className="mark" aria-hidden="true">{children}</span>;
@@ -81,6 +82,7 @@ export default async function Home() {
         </section>
 
         <section className="safety-note"><Mark>✓</Mark><div><strong>Seu ambiente é individual</strong><p>Currículo, perfil, respostas e conexões são associados somente à sua conta. Logins e etapas sensíveis continuam sob seu controle.</p></div><a href="#privacidade">Como protegemos seus dados</a></section>
+        <DashboardClient />
       </section>
     </main>
   );
