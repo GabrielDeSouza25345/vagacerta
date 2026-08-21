@@ -1,10 +1,13 @@
 FROM mcr.microsoft.com/playwright:v1.58.2-noble
 WORKDIR /app
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends novnc x11vnc \
+  && rm -rf /var/lib/apt/lists/*
 COPY browser-worker/package.json ./package.json
 RUN npm install --omit=dev
 COPY browser-worker/src ./src
 ENV PORT=8080 BROWSER_DATA_ROOT=/data MAX_BROWSER_WORKERS=1 BROWSER_JOB_TIMEOUT=300000
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -fsS http://localhost:8080/health/browser-worker || exit 1
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x800x24 -nolisten tcp >/tmp/xvfb.log 2>&1 & export DISPLAY=:99; sleep 0.5; exec npm start"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x800x24 -nolisten tcp >/tmp/xvfb.log 2>&1 & export DISPLAY=:99; sleep 0.5; x11vnc -display :99 -localhost -forever -shared -nopw -rfbport 5900 >/tmp/x11vnc.log 2>&1 & sleep 0.3; exec npm start"]
 
